@@ -1,8 +1,13 @@
 package org.leolee.elasticsearch;
 
+import com.google.gson.Gson;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -13,7 +18,9 @@ import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.junit.jupiter.api.Test;
+import org.leolee.elasticsearch.test.entity.Phone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -146,6 +153,65 @@ public class ElasticSearchDemoApplicationTests {
         AcknowledgedResponse response = esCleint.indices().delete(deleteIndexRequest, RequestOptions.DEFAULT);
         logger.info("delete index:{}", response.isAcknowledged());
 
+        //close client
+        esCleint.close();
+    }
+
+
+    /**
+     * 功能描述: <br>
+     * 〈创建文档〉
+     */
+    @Test
+    public void createDocument() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        /*
+         * build json data for es
+         */
+        Phone phone = new Phone("iphone12", "apple", 10000);
+        Gson gson = new Gson();
+        String s = gson.toJson(phone);
+
+        /*
+         * this [phone] is the the index's name, [10000] is the specified document id
+         */
+        IndexRequest indexRequest = new IndexRequest("phone").id("10000").source(s, XContentType.JSON);
+        IndexResponse response = esCleint.index(indexRequest, RequestOptions.DEFAULT);
+        logger.info("create doc:{}", response.getResult().toString());
+
+        //close client
+        esCleint.close();
+    }
+
+
+    /**
+     * 功能描述: <br>
+     * 〈修改文档〉
+     */
+    @Test
+    public void updateDocument() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        /*
+         * build json data for es
+         */
+        Phone phone = new Phone("iphone12", "apple", 10000);
+        Gson gson = new Gson();
+        String s = gson.toJson(phone);
+
+        /*
+         * this [phone] is the the index's name, [10000] is the specified document id
+         */
+        UpdateRequest updateRequest = new UpdateRequest().index("phone").id("10000").doc("price", 20000);
+        UpdateResponse response = esCleint.update(updateRequest, RequestOptions.DEFAULT);
+        logger.info("update doc:{}", response.getResult().toString());
         //close client
         esCleint.close();
     }
