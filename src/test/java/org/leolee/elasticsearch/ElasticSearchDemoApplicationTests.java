@@ -3,6 +3,10 @@ package org.leolee.elasticsearch;
 import com.google.gson.Gson;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -200,18 +204,51 @@ public class ElasticSearchDemoApplicationTests {
         );
 
         /*
-         * build json data for es
-         */
-        Phone phone = new Phone("iphone12", "apple", 10000);
-        Gson gson = new Gson();
-        String s = gson.toJson(phone);
-
-        /*
          * this [phone] is the the index's name, [10000] is the specified document id
          */
         UpdateRequest updateRequest = new UpdateRequest().index("phone").id("10000").doc("price", 20000);
         UpdateResponse response = esCleint.update(updateRequest, RequestOptions.DEFAULT);
         logger.info("update doc:{}", response.getResult().toString());
+        //close client
+        esCleint.close();
+    }
+
+
+    /**
+     * 功能描述: <br>
+     * 〈查询文档〉
+     */
+    @Test
+    public void getDocument() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        GetRequest getRequest = new GetRequest().index("phone").id("10000");
+        GetResponse documentFields = esCleint.get(getRequest, RequestOptions.DEFAULT);
+        logger.info("document info:{}", documentFields.getSourceAsString());
+
+        //close client
+        esCleint.close();
+    }
+
+
+    /**
+     * 功能描述: <br>
+     * 〈删除文档〉
+     */
+    @Test
+    public void delDocument() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        DeleteRequest deleteRequest = new DeleteRequest().index("phone").id("10000");
+        DeleteResponse delete = esCleint.delete(deleteRequest, RequestOptions.DEFAULT);
+        logger.info("delete document:{}", delete.getResult());
+
         //close client
         esCleint.close();
     }
