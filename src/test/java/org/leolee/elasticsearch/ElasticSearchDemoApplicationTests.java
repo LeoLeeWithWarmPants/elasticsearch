@@ -1,6 +1,8 @@
 package org.leolee.elasticsearch;
 
 import org.apache.http.HttpHost;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -126,6 +128,26 @@ public class ElasticSearchDemoApplicationTests {
     }
 
 
+    /**
+     * 功能描述: <br>
+     * 〈删除索引〉
+     */
+    @Test
+    public void delIndex() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
 
+        /*
+         * this [phone] is the the index's name, null value is delete all index
+         */
+        DeleteIndexRequest deleteIndexRequest = new DeleteIndexRequest("phone");
+        AcknowledgedResponse response = esCleint.indices().delete(deleteIndexRequest, RequestOptions.DEFAULT);
+        logger.info("delete index:{}", response.isAcknowledged());
+
+        //close client
+        esCleint.close();
+    }
 
 }
