@@ -3,6 +3,8 @@ package org.leolee.elasticsearch;
 import com.google.gson.Gson;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
@@ -248,6 +250,53 @@ public class ElasticSearchDemoApplicationTests {
         DeleteRequest deleteRequest = new DeleteRequest().index("phone").id("10000");
         DeleteResponse delete = esCleint.delete(deleteRequest, RequestOptions.DEFAULT);
         logger.info("delete document:{}", delete.getResult());
+
+        //close client
+        esCleint.close();
+    }
+
+
+    /**
+     * 功能描述: <br>
+     * 〈批量新增文档〉
+     */
+    @Test
+    public void batchCreateDocuments() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        //所谓的批量操作其实就是客户端将单个操作进行了捆绑处理
+        BulkRequest bulkRequest = new BulkRequest();
+        bulkRequest.add(new IndexRequest().index("phone").id("10001").source(XContentType.JSON, "name", "小米10", "brand", "小米", "price", 4000));
+        bulkRequest.add(new IndexRequest().index("phone").id("10002").source(XContentType.JSON, "name", "华为mate10", "brand", "华为", "price", 5000));
+        BulkResponse bulk = esCleint.bulk(bulkRequest, RequestOptions.DEFAULT);
+        logger.info("use time:{}", bulk.getTook());
+        logger.info("批处理操作项:{}", bulk.getItems());
+
+        //close client
+        esCleint.close();
+    }
+
+    /**
+     * 功能描述: <br>
+     * 〈批量删除文档〉
+     */
+    @Test
+    public void batchDeleteDocument() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        //所谓的批量操作其实就是客户端将单个操作进行了捆绑处理
+        BulkRequest bulkRequest = new BulkRequest();
+        bulkRequest.add(new DeleteRequest().index("phone").id("10001"));
+        bulkRequest.add(new DeleteRequest().index("phone").id("10002"));
+        BulkResponse bulk = esCleint.bulk(bulkRequest, RequestOptions.DEFAULT);
+        logger.info("use time:{}", bulk.getTook());
+        logger.info("批处理操作项:{}", bulk.getItems());
 
         //close client
         esCleint.close();
