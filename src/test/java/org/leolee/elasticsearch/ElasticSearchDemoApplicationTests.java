@@ -321,10 +321,6 @@ public class ElasticSearchDemoApplicationTests {
     /**
      * 功能描述: <br>
      * 〈全量查询索引中的数据〉
-     * @Param: []
-     * @Return: void
-     * @Author: LeoLee
-     * @Date: 2021/6/8 14:48
      */
     @Test
     public void getAllData() throws IOException {
@@ -335,6 +331,36 @@ public class ElasticSearchDemoApplicationTests {
 
         SearchRequest searchRequest = new SearchRequest().indices("phone");
         SearchSourceBuilder query = new SearchSourceBuilder().query(QueryBuilders.matchAllQuery());
+        searchRequest.source(query);
+        SearchResponse searchResponse = esCleint.search(searchRequest, RequestOptions.DEFAULT);
+        //查询命中数据
+        SearchHits hits = searchResponse.getHits();
+        logger.info("total hits num:{}", hits.getTotalHits());
+        logger.info("search user time:{}", searchResponse.getTook());
+        SearchHit[] hitsArray = hits.getHits();
+        for (int i = 0; i < hitsArray.length; i++) {
+            logger.info("{}", hitsArray[i].getSourceAsString());
+        }
+
+        //close client
+        esCleint.close();
+    }
+
+
+    /**
+     * 功能描述: <br>
+     * 〈条件查询索引中的数据〉
+     */
+    @Test
+    public void conditionQuery() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        //this [name] is the document's name from index [phone], the [小] is the condition keyword
+        SearchRequest searchRequest = new SearchRequest().indices("phone");
+        SearchSourceBuilder query = new SearchSourceBuilder().query(QueryBuilders.termQuery("name", "小"));
         searchRequest.source(query);
         SearchResponse searchResponse = esCleint.search(searchRequest, RequestOptions.DEFAULT);
         //查询命中数据
