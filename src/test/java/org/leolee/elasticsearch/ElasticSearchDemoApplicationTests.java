@@ -38,6 +38,7 @@ import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.terms.ParsedLongTerms;
 import org.elasticsearch.search.aggregations.metrics.ParsedMax;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
@@ -601,7 +602,7 @@ public class ElasticSearchDemoApplicationTests {
      * 〈聚合查询-获取最大值〉
      */
     @Test
-    public void aggregationSearch() throws IOException {
+    public void aggregationMaxSearch() throws IOException {
         //create client connection object
         RestHighLevelClient esCleint = new RestHighLevelClient(
                 RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
@@ -628,6 +629,42 @@ public class ElasticSearchDemoApplicationTests {
         List<Aggregation> aggregations = searchResponse.getAggregations().asList();
         ParsedMax max = (ParsedMax) searchResponse.getAggregations().asMap().get("max price");
         logger.info("max price:{}", max.getValueAsString());
+
+        //close client
+        esCleint.close();
+    }
+
+
+    /**
+     * 功能描述: <br>
+     * 〈聚合查询-分组查询〉
+     */
+    @Test
+    public void aggregationGroupSearch() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        SearchRequest searchRequest = new SearchRequest().indices("phone");
+        SearchSourceBuilder queryBuilder = new SearchSourceBuilder();
+
+        AggregationBuilder aggregationBuilder = AggregationBuilders.terms("price group").field("price");
+        queryBuilder.aggregation(aggregationBuilder);
+
+        searchRequest.source(queryBuilder);
+        SearchResponse searchResponse = esCleint.search(searchRequest, RequestOptions.DEFAULT);
+        //查询命中数据
+        SearchHits hits = searchResponse.getHits();
+        logger.info("total hits num:{}", hits.getTotalHits());
+        logger.info("search user time:{}", searchResponse.getTook());
+        SearchHit[] hitsArray = hits.getHits();
+        for (int i = 0; i < hitsArray.length; i++) {
+            logger.info("{}", hitsArray[i].getSourceAsString());
+        }
+
+        ParsedLongTerms price_group = (ParsedLongTerms) searchResponse.getAggregations().asMap().get("price group");
+        price_group.getBuckets().forEach(e -> logger.info("{}:{}", e.getKey().toString(), e.getDocCount()));
 
         //close client
         esCleint.close();
