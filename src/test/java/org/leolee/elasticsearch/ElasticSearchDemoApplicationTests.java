@@ -31,6 +31,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.junit.jupiter.api.Test;
 import org.leolee.elasticsearch.test.entity.Phone;
 import org.slf4j.Logger;
@@ -391,6 +392,36 @@ public class ElasticSearchDemoApplicationTests {
         //this [from(0)] is search starting position, the [size(2)] is the data size of every page
         SearchRequest searchRequest = new SearchRequest().indices("phone");
         SearchSourceBuilder queryBuilder = new SearchSourceBuilder().query(QueryBuilders.matchAllQuery()).from(0).size(2);
+        searchRequest.source(queryBuilder);
+        SearchResponse searchResponse = esCleint.search(searchRequest, RequestOptions.DEFAULT);
+        //查询命中数据
+        SearchHits hits = searchResponse.getHits();
+        logger.info("total hits num:{}", hits.getTotalHits());
+        logger.info("search user time:{}", searchResponse.getTook());
+        SearchHit[] hitsArray = hits.getHits();
+        for (int i = 0; i < hitsArray.length; i++) {
+            logger.info("{}", hitsArray[i].getSourceAsString());
+        }
+
+        //close client
+        esCleint.close();
+    }
+
+
+    /**
+     * 功能描述: <br>
+     * 〈排序查询〉
+     */
+    @Test
+    public void sortSearch() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        //the [sort("price", SortOrder.DESC)] is mean sort search DESC by [price]
+        SearchRequest searchRequest = new SearchRequest().indices("phone");
+        SearchSourceBuilder queryBuilder = new SearchSourceBuilder().query(QueryBuilders.matchAllQuery()).sort("price", SortOrder.DESC);
         searchRequest.source(queryBuilder);
         SearchResponse searchResponse = esCleint.search(searchRequest, RequestOptions.DEFAULT);
         //查询命中数据
