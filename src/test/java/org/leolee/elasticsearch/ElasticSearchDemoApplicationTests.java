@@ -31,9 +31,12 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.FuzzyQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.search.sort.SortOrder;
 import org.junit.jupiter.api.Test;
 import org.leolee.elasticsearch.test.entity.Phone;
@@ -541,6 +544,46 @@ public class ElasticSearchDemoApplicationTests {
         SearchHit[] hitsArray = hits.getHits();
         for (int i = 0; i < hitsArray.length; i++) {
             logger.info("{}", hitsArray[i].getSourceAsString());
+        }
+
+        //close client
+        esCleint.close();
+    }
+
+
+    /**
+     * 功能描述: <br>
+     * 〈高亮查询〉
+     */
+    @Test
+    public void highlineSearch() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        SearchRequest searchRequest = new SearchRequest().indices("phone");
+        SearchSourceBuilder queryBuilder = new SearchSourceBuilder();
+        TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery("name", "iphone12");
+        queryBuilder.query(termQueryBuilder);
+
+        HighlightBuilder highlightBuilder = new HighlightBuilder();
+        highlightBuilder.preTags("<font color='red'>");
+        highlightBuilder.postTags("</font>");
+        highlightBuilder.field("name");
+
+        queryBuilder.highlighter(highlightBuilder);
+        searchRequest.source(queryBuilder);
+        SearchResponse searchResponse = esCleint.search(searchRequest, RequestOptions.DEFAULT);
+        //查询命中数据
+        SearchHits hits = searchResponse.getHits();
+        logger.info("total hits num:{}", hits.getTotalHits());
+        logger.info("search user time:{}", searchResponse.getTook());
+        SearchHit[] hitsArray = hits.getHits();
+        for (int i = 0; i < hitsArray.length; i++) {
+            logger.info("{}", hitsArray[i].getSourceAsString());
+            Map<String, HighlightField> highlightFields = hitsArray[i].getHighlightFields();
+            logger.info("{}:{}", highlightFields.keySet().iterator().next(), highlightFields.get(highlightFields.keySet().iterator().next()));
         }
 
         //close client
