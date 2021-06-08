@@ -26,8 +26,10 @@ import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.FuzzyQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -498,6 +500,38 @@ public class ElasticSearchDemoApplicationTests {
 
 
         queryBuilder.query(boolQueryBuilder);
+        searchRequest.source(queryBuilder);
+        SearchResponse searchResponse = esCleint.search(searchRequest, RequestOptions.DEFAULT);
+        //查询命中数据
+        SearchHits hits = searchResponse.getHits();
+        logger.info("total hits num:{}", hits.getTotalHits());
+        logger.info("search user time:{}", searchResponse.getTook());
+        SearchHit[] hitsArray = hits.getHits();
+        for (int i = 0; i < hitsArray.length; i++) {
+            logger.info("{}", hitsArray[i].getSourceAsString());
+        }
+
+        //close client
+        esCleint.close();
+    }
+
+
+    /**
+     * 功能描述: <br>
+     * 〈模糊查询〉
+     */
+    @Test
+    public void fuzzySearch() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        SearchRequest searchRequest = new SearchRequest().indices("phone");
+        SearchSourceBuilder queryBuilder = new SearchSourceBuilder();
+        //Fuzziness.ONE 的含义是检索的term 前后增加或减少1个单词的匹配查询
+        FuzzyQueryBuilder fuzzyQueryBuilder = QueryBuilders.fuzzyQuery("name", "华").fuzziness(Fuzziness.ONE);
+        queryBuilder.query(fuzzyQueryBuilder);
         searchRequest.source(queryBuilder);
         SearchResponse searchResponse = esCleint.search(searchRequest, RequestOptions.DEFAULT);
         //查询命中数据
