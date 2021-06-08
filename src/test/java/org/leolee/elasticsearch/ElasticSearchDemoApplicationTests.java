@@ -38,6 +38,7 @@ import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.metrics.ParsedMax;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
@@ -625,9 +626,8 @@ public class ElasticSearchDemoApplicationTests {
         }
 
         List<Aggregation> aggregations = searchResponse.getAggregations().asList();
-        aggregations.forEach(e -> {
-            logger.info("{}:{}", e.getName(), e.toString());
-        });
+        ParsedMax max = (ParsedMax) searchResponse.getAggregations().asMap().get("max price");
+        logger.info("max price:{}", max.getValueAsString());
 
         //close client
         esCleint.close();
