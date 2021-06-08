@@ -34,6 +34,10 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.aggregations.Aggregation;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
@@ -585,6 +589,45 @@ public class ElasticSearchDemoApplicationTests {
             Map<String, HighlightField> highlightFields = hitsArray[i].getHighlightFields();
             logger.info("{}:{}", highlightFields.keySet().iterator().next(), highlightFields.get(highlightFields.keySet().iterator().next()));
         }
+
+        //close client
+        esCleint.close();
+    }
+
+
+    /**
+     * 功能描述: <br>
+     * 〈聚合查询-获取最大值〉
+     */
+    @Test
+    public void aggregationSearch() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        SearchRequest searchRequest = new SearchRequest().indices("phone");
+        SearchSourceBuilder queryBuilder = new SearchSourceBuilder();
+
+        //查询price的最大值，别名:max price
+        AggregationBuilder aggregationBuilder = AggregationBuilders.max("max price").field("price");
+        queryBuilder.aggregation(aggregationBuilder);
+
+        searchRequest.source(queryBuilder);
+        SearchResponse searchResponse = esCleint.search(searchRequest, RequestOptions.DEFAULT);
+        //查询命中数据
+        SearchHits hits = searchResponse.getHits();
+        logger.info("total hits num:{}", hits.getTotalHits());
+        logger.info("search user time:{}", searchResponse.getTook());
+        SearchHit[] hitsArray = hits.getHits();
+        for (int i = 0; i < hitsArray.length; i++) {
+            logger.info("{}", hitsArray[i].getSourceAsString());
+        }
+
+        List<Aggregation> aggregations = searchResponse.getAggregations().asList();
+        aggregations.forEach(e -> {
+            logger.info("{}:{}", e.getName(), e.toString());
+        });
 
         //close client
         esCleint.close();
