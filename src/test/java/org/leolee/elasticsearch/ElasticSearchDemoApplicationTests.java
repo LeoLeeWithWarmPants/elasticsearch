@@ -11,6 +11,8 @@ import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -25,6 +27,10 @@ import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.jupiter.api.Test;
 import org.leolee.elasticsearch.test.entity.Phone;
 import org.slf4j.Logger;
@@ -271,6 +277,10 @@ public class ElasticSearchDemoApplicationTests {
         BulkRequest bulkRequest = new BulkRequest();
         bulkRequest.add(new IndexRequest().index("phone").id("10001").source(XContentType.JSON, "name", "小米10", "brand", "小米", "price", 4000));
         bulkRequest.add(new IndexRequest().index("phone").id("10002").source(XContentType.JSON, "name", "华为mate10", "brand", "华为", "price", 5000));
+        bulkRequest.add(new IndexRequest().index("phone").id("10003").source(XContentType.JSON, "name", "华为mate12", "brand", "华为", "price", 6000));
+        bulkRequest.add(new IndexRequest().index("phone").id("10004").source(XContentType.JSON, "name", "iphone12", "brand", "apple", "price", 11000));
+        bulkRequest.add(new IndexRequest().index("phone").id("10005").source(XContentType.JSON, "name", "iphone11", "brand", "apple", "price", 5500));
+        bulkRequest.add(new IndexRequest().index("phone").id("10006").source(XContentType.JSON, "name", "one-plus7", "brand", "一加", "price", 4500));
         BulkResponse bulk = esCleint.bulk(bulkRequest, RequestOptions.DEFAULT);
         logger.info("use time:{}", bulk.getTook());
         logger.info("批处理操作项:{}", bulk.getItems());
@@ -302,4 +312,41 @@ public class ElasticSearchDemoApplicationTests {
         esCleint.close();
     }
 
+
+    /**
+     * 〈高级查询示例〉
+     */
+
+
+    /**
+     * 功能描述: <br>
+     * 〈全量查询索引中的数据〉
+     * @Param: []
+     * @Return: void
+     * @Author: LeoLee
+     * @Date: 2021/6/8 14:48
+     */
+    @Test
+    public void getAllData() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        SearchRequest searchRequest = new SearchRequest().indices("phone");
+        SearchSourceBuilder query = new SearchSourceBuilder().query(QueryBuilders.matchAllQuery());
+        searchRequest.source(query);
+        SearchResponse searchResponse = esCleint.search(searchRequest, RequestOptions.DEFAULT);
+        //查询命中数据
+        SearchHits hits = searchResponse.getHits();
+        logger.info("total hits num:{}", hits.getTotalHits());
+        logger.info("search user time:{}", searchResponse.getTook());
+        SearchHit[] hitsArray = hits.getHits();
+        for (int i = 0; i < hitsArray.length; i++) {
+            logger.info("{}", hitsArray[i].getSourceAsString());
+        }
+
+        //close client
+        esCleint.close();
+    }
 }
