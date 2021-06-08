@@ -27,6 +27,7 @@ import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -114,7 +115,7 @@ public class ElasticSearchDemoApplicationTests {
         logger.info("{}", aliases);
         for (Map.Entry entry : mappings.entrySet()) {
             MappingMetadata mappingMetadata = (MappingMetadata) entry.getValue();
-            logger.info("{}:{}", entry.getKey(), mappingMetadata.toString().toString());
+            logger.info("{}:{}", entry.getKey(), mappingMetadata.toString());
         }
         logger.info("{}", settings);
 
@@ -452,6 +453,51 @@ public class ElasticSearchDemoApplicationTests {
         SearchRequest searchRequest = new SearchRequest().indices("phone");
         SearchSourceBuilder queryBuilder = new SearchSourceBuilder().query(QueryBuilders.matchAllQuery());
         queryBuilder.fetchSource(new String[]{"name", "price"}, new String[]{"brand"});
+        searchRequest.source(queryBuilder);
+        SearchResponse searchResponse = esCleint.search(searchRequest, RequestOptions.DEFAULT);
+        //查询命中数据
+        SearchHits hits = searchResponse.getHits();
+        logger.info("total hits num:{}", hits.getTotalHits());
+        logger.info("search user time:{}", searchResponse.getTook());
+        SearchHit[] hitsArray = hits.getHits();
+        for (int i = 0; i < hitsArray.length; i++) {
+            logger.info("{}", hitsArray[i].getSourceAsString());
+        }
+
+        //close client
+        esCleint.close();
+    }
+
+
+    /**
+     * 功能描述: <br>
+     * 〈组合查询,must,should,范围查询〉
+     */
+    @Test
+    public void combinedSearch() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        SearchRequest searchRequest = new SearchRequest().indices("phone");
+        SearchSourceBuilder queryBuilder = new SearchSourceBuilder();
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+
+        //and组合查询
+        /*boolQueryBuilder.must(QueryBuilders.matchQuery("name", "10"));
+        boolQueryBuilder.must(QueryBuilders.matchQuery("brand", "小"));
+        boolQueryBuilder.mustNot(QueryBuilders.matchQuery("price", 4500));*/
+
+        //or组合查询
+        boolQueryBuilder.should(QueryBuilders.matchQuery("name", "10"));
+        boolQueryBuilder.should(QueryBuilders.matchQuery("name", "华为"));
+
+        //范围查询
+//        boolQueryBuilder.filter(QueryBuilders.rangeQuery("price").gte(4500));
+
+
+        queryBuilder.query(boolQueryBuilder);
         searchRequest.source(queryBuilder);
         SearchResponse searchResponse = esCleint.search(searchRequest, RequestOptions.DEFAULT);
         //查询命中数据
