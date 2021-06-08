@@ -436,4 +436,34 @@ public class ElasticSearchDemoApplicationTests {
         //close client
         esCleint.close();
     }
+
+
+    /**
+     * 功能描述: <br>
+     * 〈指定字段查询〉
+     */
+    @Test
+    public void specifyFieldSearch() throws IOException {
+        //create client connection object
+        RestHighLevelClient esCleint = new RestHighLevelClient(
+                RestClient.builder(new HttpHost("127.0.0.1", 9200, "HTTP"))
+        );
+
+        SearchRequest searchRequest = new SearchRequest().indices("phone");
+        SearchSourceBuilder queryBuilder = new SearchSourceBuilder().query(QueryBuilders.matchAllQuery());
+        queryBuilder.fetchSource(new String[]{"name", "price"}, new String[]{"brand"});
+        searchRequest.source(queryBuilder);
+        SearchResponse searchResponse = esCleint.search(searchRequest, RequestOptions.DEFAULT);
+        //查询命中数据
+        SearchHits hits = searchResponse.getHits();
+        logger.info("total hits num:{}", hits.getTotalHits());
+        logger.info("search user time:{}", searchResponse.getTook());
+        SearchHit[] hitsArray = hits.getHits();
+        for (int i = 0; i < hitsArray.length; i++) {
+            logger.info("{}", hitsArray[i].getSourceAsString());
+        }
+
+        //close client
+        esCleint.close();
+    }
 }
